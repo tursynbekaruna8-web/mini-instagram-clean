@@ -7,7 +7,7 @@ type Post = {
   likes: number;
 };
 
-const API_URL = "PUT_YOUR_RENDER_URL_HERE";
+const API_URL = "https://mini-instagram-clean-new.onrender.com";
 
 export default function Home() {
   const [caption, setCaption] = useState("");
