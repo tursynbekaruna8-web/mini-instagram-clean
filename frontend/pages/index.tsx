@@ -2,117 +2,172 @@
 import { useState, useEffect } from "react";
 
 type Post = {
-  id?: number;
+  id: number;
   caption: string;
+  likes: number;
 };
+
+const API_URL = "PUT_YOUR_RENDER_URL_HERE";
 
 export default function Home() {
   const [caption, setCaption] = useState("");
   const [posts, setPosts] = useState<Post[]>([]);
-  const [apiPosts, setApiPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // Backend-тен посттарды алу
   async function fetchPosts() {
-    const res = await fetch("https://mini-instagram-1-12tw.onrender.com/posts");
+    const res = await fetch(`${API_URL}/posts`);
     const data = await res.json();
     setPosts(data);
   }
 
-  // Жаңа пост қосу
-  const addPost = async () => {
-    if (!caption.trim()) return;
-
-    await fetch("https://mini-instagram-1-12tw.onrender.com/posts", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        caption: caption,
-      }),
-    });
-
-    setCaption("");
-    fetchPosts(); // жаңа посттан кейін қайта жүктейміз
-  };
-
-  // Fake API посттарын алу
-  async function loadPosts() {
-    const res = await fetch("https://jsonplaceholder.typicode.com/posts");
-    const data = await res.json();
-    setApiPosts(data.slice(0, 5));
-  }
-
-  // Сайт ашылғанда backend посттарын автоматты алу
   useEffect(() => {
     fetchPosts();
   }, []);
 
+  async function addPost() {
+    if (!caption.trim()) return;
+
+    setLoading(true);
+
+    await fetch(`${API_URL}/posts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ caption }),
+    });
+
+    setCaption("");
+    await fetchPosts();
+    setLoading(false);
+  }
+
+  async function likePost(id: number) {
+    await fetch(`${API_URL}/posts/${id}/like`, {
+      method: "POST",
+    });
+
+    await fetchPosts();
+  }
+
+  async function deletePost(id: number) {
+    await fetch(`${API_URL}/posts/${id}`, {
+      method: "DELETE",
+    });
+
+    await fetchPosts();
+  }
+
   return (
-    <main style={{ padding: 40 }}>
-      <h1>Mini Instagram</h1>
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "#f5f5f5",
+        padding: "40px 20px",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 500,
+          margin: "0 auto",
+        }}
+      >
+        <h1 style={{ textAlign: "center", marginBottom: 30 }}>Mini Instagram</h1>
 
-      <label style={{ display: "block", marginTop: 20 }}>
-        Caption:
-      </label>
+        <div
+          style={{
+            background: "white",
+            padding: 20,
+            borderRadius: 16,
+            boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+            marginBottom: 30,
+          }}
+        >
+          <label style={{ display: "block", marginBottom: 10, fontWeight: 600 }}>
+            Caption
+          </label>
 
-      <input
-        type="text"
-        placeholder="Write caption..."
-        value={caption}
-        onChange={(e) => setCaption(e.target.value)}
-        style={{ padding: 10, width: 320 }}
-      />
-
-      <button onClick={addPost} style={{ marginLeft: 10 }}>
-        Post
-      </button>
-
-      <button onClick={loadPosts} style={{ marginTop: 20, marginLeft: 10 }}>
-        Load API Posts
-      </button>
-
-      <div style={{ marginTop: 30 }}>
-        <h2>My Backend Posts</h2>
-        {posts.map((post, index) => (
-          <div
-            key={post.id ?? index}
+          <input
+            type="text"
+            placeholder="Write caption..."
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
             style={{
-              border: "1px solid #ccc",
+              width: "100%",
               padding: 12,
-              width: 360,
               borderRadius: 10,
+              border: "1px solid #ddd",
               marginBottom: 15,
             }}
-          >
-            <b>@aruna</b>
-            <p style={{ marginTop: 10 }}>{post.caption}</p>
-          </div>
-        ))}
-      </div>
+          />
 
-      <div style={{ marginTop: 20 }}>
-        <h2>Fake API Posts</h2>
-        {apiPosts.map((p) => (
-          <div
-            key={p.id}
+          <button
+            onClick={addPost}
+            disabled={loading}
             style={{
-              border: "1px solid gray",
-              marginBottom: 10,
-              padding: 10,
-              width: 360,
+              width: "100%",
+              padding: 12,
               borderRadius: 10,
+              border: "none",
+              background: "black",
+              color: "white",
+              cursor: "pointer",
             }}
           >
-            <b>{p.title}</b>
-            <p>{p.body}</p>
+            {loading ? "Posting..." : "Post"}
+          </button>
+
+          <p style={{ marginTop: 15 }}>
+            Preview: <b>{caption || "(empty)"}</b>
+          </p>
+        </div>
+
+        {posts.map((post) => (
+          <div
+            key={post.id}
+            style={{
+              background: "white",
+              padding: 20,
+              borderRadius: 16,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+              marginBottom: 20,
+            }}
+          >
+            <div style={{ fontWeight: 700, marginBottom: 10 }}>@aruna</div>
+
+            <p style={{ marginBottom: 16 }}>{post.caption}</p>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => likePost(post.id)}
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: 10,
+                  border: "1px solid #ddd",
+                  background: "white",
+                  cursor: "pointer",
+                }}
+              >
+                ❤️ {post.likes}
+              </button>
+
+              <button
+                onClick={() => deletePost(post.id)}
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: 10,
+                  border: "1px solid #ddd",
+                  background: "white",
+                  cursor: "pointer",
+                }}
+              >
+                🗑 Delete
+              </button>
+            </div>
           </div>
         ))}
       </div>
-
-      <p style={{ marginTop: 20 }}>
-        Preview: <b>{caption || "(empty)"}</b>
-      </p>
     </main>
   );
 }
