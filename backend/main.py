@@ -36,6 +36,18 @@ create_table()
 class Post(BaseModel):
     caption: str
 
+def add_likes_column():
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("ALTER TABLE posts ADD COLUMN likes INTEGER DEFAULT 0")
+        conn.commit()
+    except:
+        pass
+    conn.close()
+
+add_likes_column()
+
 @app.get("/")
 def home():
     return {"message": "Backend is running"}
